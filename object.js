@@ -2369,6 +2369,36 @@ function doRenderPlanGroupsPreserveScroll(){
     });
 }
 
+// Fact tab filter controls: init, setters and preserve-scroll wrapper
+function initFactFilterControls(){
+    try{
+        const chkOnly = document.getElementById('fact-filter-photo-only');
+        const chkHide = document.getElementById('fact-hide-photos');
+        if (chkOnly && chkOnly.dataset.initialized!=='1'){
+            chkOnly.dataset.initialized='1'; chkOnly.checked = !!window.__factPhotoOnly;
+        }
+        if (chkHide && chkHide.dataset.initialized!=='1'){
+            chkHide.dataset.initialized='1'; chkHide.checked = (window.__factShowPhotos === false);
+        }
+    }catch(_){ }
+}
+
+function setFactFilterPhotoOnly(val){
+    window.__factPhotoOnly = !!val;
+    doRenderFactGroupsPreserveScroll();
+}
+
+function toggleFactHidePhotos(hide){
+    window.__factShowPhotos = hide ? false : true;
+    doRenderFactGroupsPreserveScroll();
+}
+
+function doRenderFactGroupsPreserveScroll(){
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
+    renderFactGroups();
+    requestAnimationFrame(()=>{ window.scrollTo(0, y); try{ initFactFilterControls(); }catch(_){ } });
+}
+
 // Collapse/expand helpers
 function toggleGroupCollapse(groupId){
     window.__openPlanGroups = window.__openPlanGroups || {};
@@ -3121,15 +3151,22 @@ function renderFactGroups() {
     currentObject.data.fact.groups.forEach(group => {
         const groupSection = document.createElement('div');
         groupSection.className = 'group-section';
-        
+
         let rowsHtml = '';
+        const photoOnly = !!window.__factPhotoOnly;
+        const showPhotos = window.__factShowPhotos !== false; // default true
+
         group.rows.forEach((row, index) => {
+            // If 'only with photo' filter is on, skip rows without photo/receipts
+            const hasAnyPhoto = (row.photo && row.photo.length) || (Array.isArray(row.receipts) && row.receipts.length);
+            if (photoOnly && !hasAnyPhoto) return;
+
             rowsHtml += `
                 <tr>
                     <td>${index + 1}</td>
                     <td>
                         <div class="photo-cell">
-                            ${row.photo ? `<img src="${row.photo}" alt="Фото">` : '<div class="photo-placeholder">Нажмите<br>для выбора</div>'}
+                            ${showPhotos ? (row.photo ? `<img src="${row.photo}" alt="Фото">` : '<div class="photo-placeholder">Нажмите<br>для выбора</div>') : ''}
                             <input type="file" id="fact-photo-input-${row.id}" class="photo-input" accept="image/*" onchange="handleFactPhotoUpload('${group.id}', '${row.id}', this)">
                         </div>
                     </td>
@@ -3162,9 +3199,9 @@ function renderFactGroups() {
                         <select onchange="updateFactRow('${group.id}', '${row.id}', 'unit', this.value)" disabled>
                             <option value="шт" ${row.unit === 'шт' ? 'selected' : ''}>шт</option>
                             <option value="кг" ${row.unit === 'кг' ? 'selected' : ''}>кг</option>
-                                <option value="м" ${row.unit === 'м' ? 'selected' : ''}>м</option>
-                                <option value="м2" ${row.unit === 'м2' ? 'selected' : ''}>м2</option>
-                                <option value="м3" ${row.unit === 'м3' ? 'selected' : ''}>м3</option>
+                            <option value="м" ${row.unit === 'м' ? 'selected' : ''}>м</option>
+                            <option value="м2" ${row.unit === 'м2' ? 'selected' : ''}>м2</option>
+                            <option value="м3" ${row.unit === 'м3' ? 'selected' : ''}>м3</option>
                             <option value="пачка" ${row.unit === 'пачка' ? 'selected' : ''}>пачка</option>
                             <option value="мешок" ${row.unit === 'мешок' ? 'selected' : ''}>мешок</option>
                             <option value="комплект" ${row.unit === 'комплект' ? 'selected' : ''}>комплект</option>
@@ -3180,42 +3217,51 @@ function renderFactGroups() {
                 </tr>
             `;
         });
-        
+
         const groupTotal = calculateFactGroupTotal(group.rows);
-        
+
+        // Use collapsible group body so expand/collapse functions work
+        const groupOpen = (window.__openPlanGroups && window.__openPlanGroups[group.id]) ? true : false;
+        const groupBodyStyle = groupOpen ? 'display:block; opacity:1; max-height:none;' : 'display:none; opacity:0; max-height:0;';
+        const groupBodyClass = groupOpen ? 'group-body collapsible-body open' : 'group-body collapsible-body';
+
         groupSection.innerHTML = `
-            <div class="group-header">
-                <div class="group-title">${group.name}</div>
+            <div class="group-header" style="display:flex; align-items:center; gap:12px;">
+                <button class="icon-btn collapse-toggle" onclick="toggleGroupCollapse('${group.id}')">▾</button>
+                <div style="font-weight:700;">${group.name}</div>
+                <div style="margin-left:auto; font-weight:700;">${formatCurrency(groupTotal)}</div>
             </div>
-            <div class="table-wrapper">
-                <table class="smeta-table">
-                    <thead>
-                        <tr>
-                            <th>№</th>
-                            <th>Фото</th>
-                            <th>Чеки</th>
-                            <th>Дата покупки</th>
-                            <th>Название</th>
-                            <th>Ресурс</th>
-                            <th>Ед.изм</th>
-                            <th>Кол-во расход</th>
-                            <th>Цена расход</th>
-                            <th>Сумма расход</th>
-                            <th>Комментарии</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                        <tr class="group-total">
-                            <td colspan="9" style="text-align: right; font-weight: bold;">Итого:</td>
-                            <td style="font-weight: bold;">${formatCurrency(groupTotal)}</td>
-                            <td></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="${groupBodyClass}" id="group-body-${group.id}" style="${groupBodyStyle}">
+                <div class="table-wrapper">
+                    <table class="smeta-table">
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>Фото</th>
+                                <th>Чеки</th>
+                                <th>Дата покупки</th>
+                                <th>Название</th>
+                                <th>Ресурс</th>
+                                <th>Ед.изм</th>
+                                <th>Кол-во расход</th>
+                                <th>Цена расход</th>
+                                <th>Сумма расход</th>
+                                <th>Комментарии</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml || `<tr><td colspan="11" style="text-align:center; padding:12px;">Нет записей</td></tr>`}
+                            <tr class="group-total">
+                                <td colspan="9" style="text-align: right; font-weight: bold;">Итого:</td>
+                                <td style="font-weight: bold;">${formatCurrency(groupTotal)}</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         `;
-        
+
         container.appendChild(groupSection);
     });
     

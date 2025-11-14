@@ -162,6 +162,31 @@
                 <button class="btn btn-add" id="add-contractor-payment-btn" style="display:none;" onclick="addContractorPayment()">Добавить выплату</button>
                 <button class="btn btn-add" id="add-supplier-btn" style="display:none;" onclick="openAddSupplierModal()">Добавить поставщика</button>
             </div>
+            <!-- Фильтры и управление отображением для Расходов -->
+            <div id="fact-controls-accordion" class="accordion" style="margin-bottom:12px;">
+                <div class="accordion-header" onclick="toggleAccordion('fact-controls-accordion')">
+                    <div style="font-weight:600;">Фильтры и вид списка</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <input type="checkbox" id="fact-filter-photo-only" onchange="setFactFilterPhotoOnly(this.checked)" style="width:18px; height:18px; cursor:pointer;">
+                            <label for="fact-filter-photo-only" style="font-size:13px; cursor:pointer;">Только с фото</label>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <input type="checkbox" id="fact-hide-photos" onchange="toggleFactHidePhotos(this.checked)" style="width:18px; height:18px; cursor:pointer;">
+                            <label for="fact-hide-photos" style="font-size:13px; cursor:pointer;">Без фото (компактно)</label>
+                        </div>
+                        <div class="accordion-toggle">▾</div>
+                    </div>
+                </div>
+                <div class="accordion-body" style="display:none; padding:8px 12px 12px;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                        <button class="btn btn-secondary" onclick="expandAllGroups()">Раскрыть все этапы</button>
+                        <button class="btn btn-secondary" onclick="collapseAllGroups()">Свернуть все этапы</button>
+                        <button class="btn btn-secondary" onclick="expandAllWorkTypes()">Раскрыть виды работ</button>
+                        <button class="btn btn-secondary" onclick="collapseAllWorkTypes()">Свернуть виды работ</button>
+                    </div>
+                </div>
+            </div>
             <!-- Верхние статьи расхода (фиксация по доп. действиям) -->
             <div id="fact-meta-expenses" class="analysis-block" style="margin-bottom:16px;">
                 <div class="block-header"><div class="block-title">Расходы по дополнительным статьям</div></div>
