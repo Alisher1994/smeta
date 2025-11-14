@@ -18,15 +18,60 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 // Generic accordion toggle by id
+// Animate accordion open/close by toggling explicit heights (robust against reflows)
+function animateAccordionElement(body, open, toggleEl){
+    if (!body) return;
+    // ensure overflow hidden while animating
+    body.style.overflow = 'hidden';
+
+    const cleanupAfterOpen = ()=>{
+        body.style.height = '';
+        body.style.overflow = '';
+        body.removeEventListener('transitionend', cleanupAfterOpen);
+    };
+
+    if (open){
+        // open: set display block, measure, animate to scrollHeight, then clear explicit height
+        body.style.display = 'block';
+        const targetH = body.scrollHeight;
+        // start from zero height
+        body.style.height = '0px';
+        // force reflow
+        body.getBoundingClientRect();
+        body.style.transition = 'height 260ms ease';
+        body.style.height = targetH + 'px';
+        body.dataset.open = 'true';
+        if (toggleEl) toggleEl.textContent = '▴';
+        body.addEventListener('transitionend', cleanupAfterOpen);
+    } else {
+        // close: animate from current height to zero, then set display none
+        const startH = body.scrollHeight;
+        body.style.height = startH + 'px';
+        // force reflow
+        body.getBoundingClientRect();
+        body.style.transition = 'height 200ms ease';
+        body.style.height = '0px';
+        body.dataset.open = 'false';
+        if (toggleEl) toggleEl.textContent = '▾';
+        const onEndClose = ()=>{
+            body.style.display = 'none';
+            body.style.height = '';
+            body.style.overflow = '';
+            body.removeEventListener('transitionend', onEndClose);
+        };
+        body.addEventListener('transitionend', onEndClose);
+    }
+}
+
+// Generic accordion toggle by id (uses animateAccordionElement)
 function toggleAccordion(id){
     const acc = document.getElementById(id);
     if (!acc) return;
     const body = acc.querySelector('.accordion-body');
     const toggle = acc.querySelector('.accordion-toggle');
     if (!body) return;
-    const isOpen = body.style.display && body.style.display !== 'none';
-    if (isOpen){ body.style.display = 'none'; if(toggle) toggle.textContent = '▾'; }
-    else { body.style.display = 'block'; if(toggle) toggle.textContent = '▴'; }
+    const isOpen = body.dataset.open === 'true' || (body.style.display && body.style.display !== 'none');
+    animateAccordionElement(body, !isOpen, toggle);
 }
 
 // Backwards-compatible wrapper used in some markup
@@ -75,8 +120,31 @@ function fullObjectInit(){
     renderPlanMetaExpenses();
     renderFactMetaExpenses();
     updateChart();
+    // initialize accordion heights so visible bodies display correctly and support smooth toggle
+    try{ initAccordionHeights(); }catch(_){ }
     // Ensure the left sidebar is populated with available objects
     try{ renderObjectSidebarList(); }catch(_){ }
+}
+
+// Initialize accordion bodies state on page load: ensure displayed bodies have no fixed height
+function initAccordionHeights(){
+    document.querySelectorAll('.accordion').forEach(acc=>{
+        const body = acc.querySelector('.accordion-body');
+        if (!body) return;
+        const visible = (body.style.display && body.style.display !== 'none') || body.dataset.open === 'true' || window.getComputedStyle(body).display !== 'none' && body.style.height !== '0px';
+        if (visible){
+            body.style.display = 'block';
+            body.style.height = '';
+            body.style.overflow = '';
+            body.dataset.open = 'true';
+            const toggle = acc.querySelector('.accordion-toggle'); if (toggle) toggle.textContent = '▴';
+        } else {
+            body.style.display = 'none';
+            body.style.height = '0px';
+            body.dataset.open = 'false';
+            const toggle = acc.querySelector('.accordion-toggle'); if (toggle) toggle.textContent = '▾';
+        }
+    });
 }
 
 function sumBlockPlan(block){
@@ -1889,27 +1957,25 @@ function renderPlanGroups() {
         const groupBodyStyle = groupOpen ? 'display:block; opacity:1; max-height:none;' : 'display:none; opacity:0; max-height:0;';
         const groupBodyClass = groupOpen ? 'group-body collapsible-body open' : 'group-body collapsible-body';
         groupSection.innerHTML = `
-            <div class="accordion group-section" style="margin-bottom:12px;">
-                <div class="accordion-header group-header" onclick="toggleGroupCollapse('${group.id}')" style="display:flex; align-items:center; gap:12px; cursor:pointer;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span class="collapse-indicator" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:6px; border:1px solid var(--border); background:transparent;">▾</span>
-                        <span style="font-weight:700; color:var(--text);">Этап</span>
-                        <span class="worktype-number">${gIndex+1}</span>
-                    </div>
-                    <input type="text" class="group-title" value="${group.name}" onchange="updateGroupName('plan', '${group.id}', this.value)" placeholder="Название этапа" style="flex:1; margin-left:8px;">
-                    <div style="display:flex; align-items:center; gap:12px; margin-left:12px;">
-                        <div id="group-total-inline-${group.id}" style="font-weight:700; color:var(--text); min-width:120px; text-align:right;">${formatCurrency(groupTotal)}</div>
-                        <div style="display:flex; gap:6px; align-items:center;">
-                            <button class="icon-btn" title="Добавить вид работ" onclick="(function(e){ e.stopPropagation(); addWorkType('${group.id}'); })(event)">+</button>
-                            <button class="icon-btn" title="Переместить этап вверх" onclick="(function(e){ e.stopPropagation(); moveGroup('${group.id}','up'); })(event)">↑</button>
-                            <button class="icon-btn" title="Переместить этап вниз" onclick="(function(e){ e.stopPropagation(); moveGroup('${group.id}','down'); })(event)">↓</button>
-                            <button class="icon-btn" title="Удалить этап" onclick="(function(e){ e.stopPropagation(); deletePlanGroup('${group.id}'); })(event)">✕</button>
-                        </div>
+            <div class="group-header" style="display:flex; align-items:center; gap:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="icon-btn collapse-toggle" onclick="toggleGroupCollapse('${group.id}')">▾</button>
+                    <span style="font-weight:700; color:var(--text);">Этап</span>
+                    <span class="worktype-number">${gIndex+1}</span>
+                </div>
+                <input type="text" class="group-title" value="${group.name}" onchange="updateGroupName('plan', '${group.id}', this.value)" placeholder="Название этапа" style="flex:1;">
+                <div style="display:flex; align-items:center; gap:12px; margin-left:12px;">
+                    <div id="group-total-inline-${group.id}" style="font-weight:700; color:var(--text); min-width:120px; text-align:right;">${formatCurrency(groupTotal)}</div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button class="icon-btn" title="Добавить вид работ" onclick="addWorkType('${group.id}')">+</button>
+                        <button class="icon-btn" title="Переместить этап вверх" onclick="moveGroup('${group.id}','up')">↑</button>
+                        <button class="icon-btn" title="Переместить этап вниз" onclick="moveGroup('${group.id}','down')">↓</button>
+                        <button class="icon-btn" title="Удалить этап" onclick="deletePlanGroup('${group.id}')">✕</button>
                     </div>
                 </div>
-                <div class="accordion-body ${groupBodyClass}" id="group-body-${group.id}" style="${groupBodyStyle}">
-                    ${workTypesHtml || '<div class="muted" style="padding:8px 0 12px;">Нет видов работ. Добавьте новый вид.</div>'}
-                </div>
+            </div>
+            <div class="${groupBodyClass}" id="group-body-${group.id}" style="${groupBodyStyle}">
+                ${workTypesHtml || '<div class="muted" style="padding:8px 0 12px;">Нет видов работ. Добавьте новый вид.</div>'}
             </div>
         `;
 

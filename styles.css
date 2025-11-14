@@ -243,6 +243,8 @@ body { font-family: -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-se
  .accordion .accordion-header .btn, .accordion .accordion-header .btn-add, .accordion .accordion-header .btn-secondary { height: calc(var(--accordion-header-h) - 16px); }
  .accordion .accordion-header .accordion-toggle { margin-left:8px; }
 .accordion .accordion-body { padding: 12px; }
+/* Smooth accordion transition: JS will control explicit heights for robust animation */
+.accordion .accordion-body { overflow: hidden; height: 0; transition: height 260ms ease; }
 .accordion .accordion-toggle { font-size:14px; color:var(--muted); }
 .btn-secondary { background: #eef7ff; color: #243b53; border-color: var(--border); }
 .btn-secondary:hover { background: #e6f3ff; }
