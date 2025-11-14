@@ -71,7 +71,9 @@ function addObject() {
         data: {
             plan: { groups: [] },
             fact: { groups: [] },
-            income: { rows: [] }
+            income: { rows: [] },
+            // default settings: supply and stock tabs disabled until user enables in object data modal
+            settings: { enableSupply: false, enableStock: false }
         }
     });
     saveObjects();

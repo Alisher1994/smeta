@@ -137,6 +137,15 @@ function fullObjectInit(){
             }
         }
     }catch(_){ }
+    // Hide supply/stock tabs by default unless enabled in object settings
+    try{
+        const settings = (currentObject && currentObject.data && currentObject.data.settings) || {};
+        const supplyBtn = document.getElementById('tab-btn-supply');
+        const stockBtn = document.getElementById('tab-btn-stock');
+        if (supplyBtn) supplyBtn.style.display = settings.enableSupply ? 'inline-flex' : 'none';
+        if (stockBtn) stockBtn.style.display = settings.enableStock ? 'inline-flex' : 'none';
+        try{ const activeTab = document.querySelector('.tab.active'); if (activeTab && ((activeTab.dataset.tab==='supply' && !settings.enableSupply) || (activeTab.dataset.tab==='stock' && !settings.enableStock))){ const analysisBtn = document.querySelector('.tab[data-tab="analysis"]'); if (analysisBtn) switchTab('analysis', analysisBtn); } }catch(_){ }
+    }catch(_){ }
 }
 
 // Initialize accordion bodies state on page load: ensure displayed bodies have no fixed height

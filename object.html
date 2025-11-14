@@ -36,9 +36,9 @@
             <button class="tab active" data-tab="analysis" onclick="switchTab('analysis', this)">Анализ</button>
             <button class="tab" data-tab="income" onclick="switchTab('income', this)">Приход</button>
             <button class="tab" data-tab="plan" onclick="switchTab('plan', this)">Бюджет</button>
-            <button class="tab" data-tab="supply" onclick="switchTab('supply', this)">Снабжение</button>
+            <button id="tab-btn-supply" class="tab" data-tab="supply" onclick="switchTab('supply', this)">Снабжение</button>
             <button class="tab" data-tab="fact" onclick="switchTab('fact', this)">Расход</button>
-            <button class="tab" data-tab="stock" onclick="switchTab('stock', this)">Склад</button>
+            <button id="tab-btn-stock" class="tab" data-tab="stock" onclick="switchTab('stock', this)">Склад</button>
         </div>
 
     <!-- Вкладка Бюджет -->
@@ -487,6 +487,8 @@
             const prev = byId('object-photo-preview');
             prev.innerHTML = o.photo ? `<img src="${o.photo}" alt="Фото объекта">` : '<span class="photo-placeholder">Нет фото</span>';
             photoDraft = o.photo || null;
+            // Populate checkbox for supply/stock tabs
+            try{ const chk = byId('modal-enable-supply-stock'); if (chk){ chk.checked = !!(o.data && o.data.settings && (o.data.settings.enableSupply || o.data.settings.enableStock)); } }catch(_){ }
             byId('object-data-modal').style.display = 'block';
         }
         function closeObjectDataModal(){ byId('object-data-modal').style.display = 'none'; }
@@ -509,6 +511,8 @@
                 const clientUserId = byId('modal-clientUserId') ? byId('modal-clientUserId').value : '';
                 data.foremanUserId = foremanUserId;
                 data.clientUserId = clientUserId;
+                // Read settings checkbox state
+                try{ const chk = byId('modal-enable-supply-stock'); if (chk){ data.settings = data.settings || {}; data.settings.enableSupply = !!chk.checked; data.settings.enableStock = !!chk.checked; } }catch(_){ }
                 Object.assign(window.currentObject, data);
                 if (typeof saveObject==='function') saveObject();
                 const titleEl = byId('object-title'); if (titleEl) titleEl.textContent = window.currentObject.name;
@@ -596,6 +600,10 @@
                     <div class="field"><label>Заказчик (из пользователей)</label><div class="type-select-custom"><select id="modal-clientUserId"><option value="">—</option></select><span class="chevron">▾</span></div></div>
                     <div class="field"><label>Ответственный прораб</label><div class="type-select-custom"><select id="modal-foremanUserId"><option value="">—</option></select><span class="chevron">▾</span></div></div>
                     <div class="field" style="grid-column:1 / -1;"><label>Адрес объекта</label><input type="text" id="modal-address" placeholder="Адрес"></div>
+                    <div class="field" style="grid-column:1 / -1; display:flex; align-items:center; gap:8px;">
+                        <label style="margin:0; font-weight:600;">Параметры вкладок</label>
+                        <label style="font-size:13px; display:flex; align-items:center; gap:8px; margin:0;"><input type="checkbox" id="modal-enable-supply-stock"> Отображать вкладки «Снабжение» и «Склад»</label>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
