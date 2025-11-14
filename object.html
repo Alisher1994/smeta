@@ -511,8 +511,17 @@
                 const clientUserId = byId('modal-clientUserId') ? byId('modal-clientUserId').value : '';
                 data.foremanUserId = foremanUserId;
                 data.clientUserId = clientUserId;
-                // Read settings checkbox states
-                try{ const chkS = byId('modal-enable-supply'); const chkSt = byId('modal-enable-stock'); if (chkS || chkSt){ data.settings = data.settings || {}; data.settings.enableSupply = !!(chkS && chkS.checked); data.settings.enableStock = !!(chkSt && chkSt.checked); } }catch(_){ }
+                // Read settings checkbox states and write them into currentObject.data.settings
+                try{
+                    const chkS = byId('modal-enable-supply');
+                    const chkSt = byId('modal-enable-stock');
+                    // ensure currentObject.data exists
+                    window.currentObject.data = window.currentObject.data || {};
+                    window.currentObject.data.settings = window.currentObject.data.settings || {};
+                    if (chkS) window.currentObject.data.settings.enableSupply = !!chkS.checked;
+                    if (chkSt) window.currentObject.data.settings.enableStock = !!chkSt.checked;
+                }catch(_){ }
+                // assign top-level fields (name, dates, photo, etc.) onto currentObject
                 Object.assign(window.currentObject, data);
                 if (typeof saveObject==='function') saveObject();
                 const titleEl = byId('object-title'); if (titleEl) titleEl.textContent = window.currentObject.name;
