@@ -234,8 +234,15 @@ body { font-family: -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-se
 .btn-add:hover { background: var(--btn-bg-hover); }
 /* Accordion styles for plan filters */
 .accordion { border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgba(245,249,255,0.8); }
-.accordion .accordion-header { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; cursor:pointer; }
-.accordion .accordion-body { padding: 0 12px 12px; }
+ .accordion { border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgba(245,249,255,0.8); }
+ /* Unified accordion header sizing so collapsed headers are visually identical */
+ .accordion { --accordion-header-h: 52px; }
+ .accordion .accordion-header { display:flex; align-items:center; justify-content:space-between; padding:0 12px; cursor:pointer; height:var(--accordion-header-h); box-sizing:border-box; }
+ .accordion .accordion-header > div { display:flex; align-items:center; gap:8px; }
+ /* Ensure buttons inside headers don't stretch header height */
+ .accordion .accordion-header .btn, .accordion .accordion-header .btn-add, .accordion .accordion-header .btn-secondary { height: calc(var(--accordion-header-h) - 16px); }
+ .accordion .accordion-header .accordion-toggle { margin-left:8px; }
+.accordion .accordion-body { padding: 12px; }
 .accordion .accordion-toggle { font-size:14px; color:var(--muted); }
 .btn-secondary { background: #eef7ff; color: #243b53; border-color: var(--border); }
 .btn-secondary:hover { background: #e6f3ff; }
