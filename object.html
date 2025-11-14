@@ -99,8 +99,21 @@
                 <!-- Controls placeholder kept for layout consistency -->
             </div>
 
-            <div id="plan-groups-container">
-                <!-- Группы будут добавляться динамически -->
+            <!-- All plan groups wrapped in a single accordion -->
+            <div id="plan-groups-accordion" class="accordion" style="margin-bottom:12px;">
+                <div class="accordion-header" onclick="toggleAccordion('plan-groups-accordion')">
+                    <div style="font-weight:600;">Этапы</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn btn-secondary" onclick="(function(e){ e.stopPropagation(); expandAllGroups(); })(event)">Раскрыть все</button>
+                        <button class="btn btn-secondary" onclick="(function(e){ e.stopPropagation(); collapseAllGroups(); })(event)">Свернуть все</button>
+                        <div class="accordion-toggle">▾</div>
+                    </div>
+                </div>
+                <div class="accordion-body" style="display:block; padding:8px 12px 12px;">
+                    <div id="plan-groups-container">
+                        <!-- Группы будут добавляться динамически -->
+                    </div>
+                </div>
             </div>
 
             <div class="grand-total">
