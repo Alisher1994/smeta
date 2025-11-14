@@ -281,6 +281,17 @@ async function printActiveTabPDF(){
     }
 }
 
+// Small wrapper for Plan-tab print button (keeps API call centralized)
+function printPlanPDF(){
+    try{
+        // call existing generic print handler which picks active tab
+        printActiveTabPDF();
+    }catch(e){
+        console.warn('printPlanPDF error', e);
+        alert('Ошибка при печати: ' + (e && e.message ? e.message : 'Неизвестная ошибка'));
+    }
+}
+
 // Переключение вкладок
 function switchTab(tabName, button) {
     // If in gateway mode, ignore tab switches until a block or whole object is opened

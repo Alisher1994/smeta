@@ -53,6 +53,13 @@
                     <div style="font-weight:600;">Фильтры</div>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <button id="add-group-btn" class="btn btn-add" onclick="(function(e){ e.stopPropagation(); addPlanGroup(); })(event)">Добавить этап</button>
+                        <button id="print-plan-btn" class="btn btn-secondary" title="Печать бюджета" onclick="(function(e){ e.stopPropagation(); printPlanPDF(); })(event)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <path d="M6 9V2h12v7"></path>
+                                <path d="M6 18H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"></path>
+                                <rect x="6" y="14" width="12" height="8" rx="2"></rect>
+                            </svg>
+                        </button>
                         <div class="accordion-toggle">▾</div>
                     </div>
                 </div>
