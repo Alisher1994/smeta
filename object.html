@@ -47,20 +47,7 @@
                 <button class="btn btn-secondary electron-only" style="display:none;" onclick="printActiveTabPDF()" title="Сохранить вкладку в PDF">Печать PDF</button>
                 <!-- Google Drive button скрыт по требованию пользователя -->
             </div>
-            <!-- Верхние статьи бюджета (аккордион) -->
-            <div id="plan-meta-accordion" class="accordion" style="margin-bottom:16px;">
-                <div class="accordion-header" onclick="toggleAccordion('plan-meta-accordion')">
-                    <div style="font-weight:600;">Дополнительные статьи бюджета</div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <button id="add-plan-meta-btn" class="btn btn-add" onclick="(function(e){ e.stopPropagation(); addPlanMetaExtra(); })(event)">Добавить ещё</button>
-                        <div class="accordion-toggle">▾</div>
-                    </div>
-                </div>
-                <div class="accordion-body" style="display:none; padding:12px 12px 12px;">
-                    <div id="plan-meta-content"></div>
-                </div>
-            </div>
-            <!-- Accordion: фильтры (скрываемые) -->
+            <!-- Accordion: фильтры (скрываемые) (перенесено вверх) -->
             <div id="plan-controls-accordion" class="accordion" style="margin-bottom:12px;">
                 <div class="accordion-header" onclick="togglePlanControlsAccordion()">
                     <div style="font-weight:600;">Фильтры</div>
@@ -91,6 +78,20 @@
                         <button class="btn btn-secondary" onclick="expandAllWorkTypes()">Раскрыть виды работ</button>
                         <button class="btn btn-secondary" onclick="collapseAllWorkTypes()">Свернуть виды работ</button>
                     </div>
+                </div>
+            </div>
+
+            <!-- Верхние статьи бюджета (аккордион) -->
+            <div id="plan-meta-accordion" class="accordion" style="margin-bottom:16px;">
+                <div class="accordion-header" onclick="toggleAccordion('plan-meta-accordion')">
+                    <div style="font-weight:600;">Дополнительные статьи бюджета</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button id="add-plan-meta-btn" class="btn btn-add" onclick="(function(e){ e.stopPropagation(); addPlanMetaExtra(); })(event)">Добавить ещё</button>
+                        <div class="accordion-toggle">▾</div>
+                    </div>
+                </div>
+                <div class="accordion-body" style="display:none; padding:12px 12px 12px;">
+                    <div id="plan-meta-content"></div>
                 </div>
             </div>
 
