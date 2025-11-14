@@ -162,6 +162,16 @@ function updateSupplyStockTabs(settings){
     }catch(_){ }
 }
 
+// Check whether a named module is enabled on the current object
+function isModuleEnabled(name){
+    try{
+        const s = (currentObject && currentObject.data && currentObject.data.settings) || {};
+        if (name === 'supply') return !!s.enableSupply;
+        if (name === 'stock') return !!s.enableStock;
+        return false;
+    }catch(_){ return false; }
+}
+
 // Initialize accordion bodies state on page load: ensure displayed bodies have no fixed height
 function initAccordionHeights(){
     document.querySelectorAll('.accordion').forEach(acc=>{
@@ -745,6 +755,8 @@ function computeOrderedQuantities(){
 // Создание документа заказа из текущего выбора
 function createSupplyOrderFromSelection(){
     ensureSupplyData();
+    // Respect object-level module setting
+    if (!isModuleEnabled('supply')){ alert('Модуль "Снабжение" отключён в настройках объекта. Документы не формируются.'); return; }
     // Собираем отмеченные ресурсы и их количества
     const rows = Array.from(document.querySelectorAll('.supply-select:checked'));
     if (!rows.length){ alert('Не выбраны ресурсы для заказа'); return; }
@@ -791,6 +803,7 @@ function groupItemsBySupplier(items){
 // Структура compDoc: { id, createdAt, status:'Новый'|'Завершен', items:[{planRowId, qtyPlan, pricePlan, sumPlan, competitors:[{supplier, price, sum, eta, photo, taxRating, license, score}]}] }
 function createCompetitiveDocFromSelection(){
     ensureSupplyData();
+    if (!isModuleEnabled('supply')){ alert('Модуль "Снабжение" отключён в настройках объекта. Документы не формируются.'); return; }
     const rows = Array.from(document.querySelectorAll('.supply-select:checked'));
     if (!rows.length){ alert('Не выбраны позиции для конкурентного листа'); return; }
     const compId = generateCompetitiveId();
@@ -1257,6 +1270,8 @@ function deleteCompetitiveDoc(docId){
     renderCompetitiveList();
 }
 function applyCompetitiveWinnerToOrder(docId){
+    // Ensure supply module is enabled
+    if (!isModuleEnabled('supply')){ alert('Модуль "Снабжение" отключён в настройках объекта. Невозможно сформировать заказы.'); return; }
     const doc = (currentObject.data.supply.compDocs||[]).find(x=>x.id===docId); if(!doc) return;
     const supplierMap = {};
     (doc.items||[]).forEach(it=>{
@@ -1524,8 +1539,10 @@ function applyDeliveredOrderToFactAndStock(order){
         factRow.quantityFact += Number(it.qtyOrdered)||0;
         if (row.price){ factRow.priceFact = row.price; }
         factRow.sumFact = (factRow.quantityFact ||0) * (factRow.priceFact||0);
-        // Складское движение прихода
-        currentObject.data.stock.movements.push({ id:'mv-'+Date.now().toString(36)+Math.random().toString(16).slice(2), type:'приход', date:new Date().toISOString().slice(0,10), planRowId: row.id, qty: Number(it.qtyOrdered)||0, unit: row.unit, resource: row.resource, comment: 'Поступление по заказу '+order.id });
+        // Складское движение прихода (только если модуль склада включён)
+        if (isModuleEnabled('stock')){
+            currentObject.data.stock.movements.push({ id:'mv-'+Date.now().toString(36)+Math.random().toString(16).slice(2), type:'приход', date:new Date().toISOString().slice(0,10), planRowId: row.id, qty: Number(it.qtyOrdered)||0, unit: row.unit, resource: row.resource, comment: 'Поступление по заказу '+order.id });
+        }
     });
     saveObject();
     renderFactGroups();
@@ -1544,7 +1561,9 @@ function applyDeliveredSupplierGroupToFactAndStock(order, group){
         factRow.quantityFact += Number(it.qtyOrdered)||0;
         if (row.price){ factRow.priceFact = row.price; }
         factRow.sumFact = (factRow.quantityFact ||0) * (factRow.priceFact||0);
-        currentObject.data.stock.movements.push({ id:'mv-'+Date.now().toString(36)+Math.random().toString(16).slice(2), type:'приход', date:new Date().toISOString().slice(0,10), planRowId: row.id, qty: Number(it.qtyOrdered)||0, unit: row.unit, resource: row.resource, comment: 'Поступление по заказу '+order.id+' ('+group.supplier+')' });
+        if (isModuleEnabled('stock')){
+            currentObject.data.stock.movements.push({ id:'mv-'+Date.now().toString(36)+Math.random().toString(16).slice(2), type:'приход', date:new Date().toISOString().slice(0,10), planRowId: row.id, qty: Number(it.qtyOrdered)||0, unit: row.unit, resource: row.resource, comment: 'Поступление по заказу '+order.id+' ('+group.supplier+')' });
+        }
     });
     saveObject();
     renderFactGroups();
