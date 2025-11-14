@@ -1889,25 +1889,27 @@ function renderPlanGroups() {
         const groupBodyStyle = groupOpen ? 'display:block; opacity:1; max-height:none;' : 'display:none; opacity:0; max-height:0;';
         const groupBodyClass = groupOpen ? 'group-body collapsible-body open' : 'group-body collapsible-body';
         groupSection.innerHTML = `
-            <div class="group-header" style="display:flex; align-items:center; gap:12px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <button class="icon-btn collapse-toggle" onclick="toggleGroupCollapse('${group.id}')">▾</button>
-                    <span style="font-weight:700; color:var(--text);">Этап</span>
-                    <span class="worktype-number">${gIndex+1}</span>
-                </div>
-                <input type="text" class="group-title" value="${group.name}" onchange="updateGroupName('plan', '${group.id}', this.value)" placeholder="Название этапа" style="flex:1;">
-                <div style="display:flex; align-items:center; gap:12px; margin-left:12px;">
-                    <div id="group-total-inline-${group.id}" style="font-weight:700; color:var(--text); min-width:120px; text-align:right;">${formatCurrency(groupTotal)}</div>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <button class="icon-btn" title="Добавить вид работ" onclick="addWorkType('${group.id}')">+</button>
-                        <button class="icon-btn" title="Переместить этап вверх" onclick="moveGroup('${group.id}','up')">↑</button>
-                        <button class="icon-btn" title="Переместить этап вниз" onclick="moveGroup('${group.id}','down')">↓</button>
-                        <button class="icon-btn" title="Удалить этап" onclick="deletePlanGroup('${group.id}')">✕</button>
+            <div class="accordion group-section" style="margin-bottom:12px;">
+                <div class="accordion-header group-header" onclick="toggleGroupCollapse('${group.id}')" style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="collapse-indicator" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:6px; border:1px solid var(--border); background:transparent;">▾</span>
+                        <span style="font-weight:700; color:var(--text);">Этап</span>
+                        <span class="worktype-number">${gIndex+1}</span>
+                    </div>
+                    <input type="text" class="group-title" value="${group.name}" onchange="updateGroupName('plan', '${group.id}', this.value)" placeholder="Название этапа" style="flex:1; margin-left:8px;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-left:12px;">
+                        <div id="group-total-inline-${group.id}" style="font-weight:700; color:var(--text); min-width:120px; text-align:right;">${formatCurrency(groupTotal)}</div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button class="icon-btn" title="Добавить вид работ" onclick="(function(e){ e.stopPropagation(); addWorkType('${group.id}'); })(event)">+</button>
+                            <button class="icon-btn" title="Переместить этап вверх" onclick="(function(e){ e.stopPropagation(); moveGroup('${group.id}','up'); })(event)">↑</button>
+                            <button class="icon-btn" title="Переместить этап вниз" onclick="(function(e){ e.stopPropagation(); moveGroup('${group.id}','down'); })(event)">↓</button>
+                            <button class="icon-btn" title="Удалить этап" onclick="(function(e){ e.stopPropagation(); deletePlanGroup('${group.id}'); })(event)">✕</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="${groupBodyClass}" id="group-body-${group.id}" style="${groupBodyStyle}">
-                ${workTypesHtml || '<div class="muted" style="padding:8px 0 12px;">Нет видов работ. Добавьте новый вид.</div>'}
+                <div class="accordion-body ${groupBodyClass}" id="group-body-${group.id}" style="${groupBodyStyle}">
+                    ${workTypesHtml || '<div class="muted" style="padding:8px 0 12px;">Нет видов работ. Добавьте новый вид.</div>'}
+                </div>
             </div>
         `;
 
