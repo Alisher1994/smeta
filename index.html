@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Смета - Главная</title>
+    <meta name="theme-color" content="#6ea8fe">
+    <!-- <link rel="manifest" href="manifest.webmanifest"> -->
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header" style="gap:12px;">
+            <h1 style="flex:0 0 auto;">Система управления сметой</h1>
+            <div class="header-tools" style="display:flex; gap:8px; align-items:center; margin-left:auto;">
+                <!-- Объекты: поиск + кнопка -->
+                <input id="object-search" class="pill-input" type="text" placeholder="Поиск объектов (название, клиент, блок, тип)" style="width:340px; display:inline-block;">
+                <button id="add-object-btn" class="btn btn-primary" style="border-radius:var(--radius-pill); display:inline-flex;">Добавить объект</button>
+                <!-- Пользователи: поиск + кнопка (показываются только во вкладке Пользователи) -->
+                <input id="user-search" class="pill-input" type="text" placeholder="Поиск пользователей (ФИО, роль, телефон, ChatID)" style="width:300px; display:none;">
+                <button id="add-user-header-btn" class="btn btn-primary" style="border-radius:var(--radius-pill); display:none;">Добавить пользователя</button>
+                <!-- Подрядчики: поиск + кнопка (показываются только во вкладке Подрядчики) -->
+                <input id="contractor-search" class="pill-input" type="text" placeholder="Поиск подрядчиков (название, телефон, контакт)" style="width:300px; display:none;">
+                <button id="add-contractor-header-btn" class="btn btn-primary" style="border-radius:var(--radius-pill); display:none;">Добавить подрядчика</button>
+                <!-- Поставщики: поиск + кнопка (показываются только во вкладке Поставщики) -->
+                <input id="supplier-search" class="pill-input" type="text" placeholder="Поиск поставщиков (название, контакт, ИНН, банк)" style="width:300px; display:none;">
+                <button id="add-supplier-header-btn" class="btn btn-primary" style="border-radius:var(--radius-pill); display:none;">Добавить поставщика</button>
+            </div>
+        </div>
+        
+        <div class="tabs" style="margin-top:0;">
+            <button class="tab active" onclick="switchMainTab('objects', this)">Список объектов</button>
+            <button class="tab" onclick="switchMainTab('users', this)">Пользователи</button>
+            <button class="tab" onclick="switchMainTab('contractors', this)">Подрядчики</button>
+            <button class="tab" onclick="switchMainTab('suppliers', this)">Поставщики</button>
+        </div>
+        <div class="main-content">
+            <div id="tab-objects" class="tab-content active">
+                <div class="objects-section">
+                    <div id="object-type-filters" class="role-filters" style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 10px;"></div>
+                    <div id="objects-list" class="objects-list"></div>
+                </div>
+            </div>
+            <div id="tab-users" class="tab-content">
+                <!-- Роль-фильтры -->
+                <div id="user-role-filters" class="role-filters" style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 10px;"></div>
+                <div id="users-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+            <div id="tab-contractors" class="tab-content">
+                <div id="contractor-status-filters" class="role-filters" style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 10px;"></div>
+                <div id="contractors-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+            <div id="tab-suppliers" class="tab-content">
+                <div id="supplier-status-filters" class="role-filters" style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 10px;"></div>
+                <div id="suppliers-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('sw.js').catch(()=>{});
+        });
+    }
+    </script>
+    <script src="index_app.js"></script>
+    <!-- Модалка добавления/редактирования пользователя -->
+    <div id="user-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:720px;">
+            <div class="modal-header">
+                <h3 id="user-modal-title">Новый пользователь</h3>
+                <button class="close-btn" onclick="closeUserModal()">&times;</button>
+            </div>
+            <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
+                <div class="analysis-photo large" id="user-photo-preview">Нет фото</div>
+                <div class="analysis-meta-grid" style="flex:1;">
+                    <div class="field"><label>ФИО пользователя</label><input type="text" id="user-fullname" placeholder="ФИО пользователя" required></div>
+                    <div class="field"><label>Роль</label><div class="type-select-custom"><select id="user-role"></select><span class="chevron">▾</span></div></div>
+                    <div class="field"><label>Телефон</label><input type="text" id="user-phone" placeholder="Телефон"></div>
+                    <div class="field"><label>ChatID</label><input type="text" id="user-chat" placeholder="ChatID"></div>
+                    <div class="field"><label>Статус</label><div class="type-select-custom"><select id="user-status"></select><span class="chevron">▾</span></div></div>
+                    <div class="field" style="grid-column:1/-1;"><input type="file" accept="image/*" id="user-photo-input"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveUserFromModal()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeUserModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <!-- Модалка добавления/редактирования подрядчика -->
+    <div id="contractor-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:700px;">
+            <div class="modal-header">
+                <h3 id="contractor-modal-title">Новый подрядчик</h3>
+                <button class="close-btn" onclick="closeContractorModal()">&times;</button>
+            </div>
+            <div class="analysis-meta-grid" style="flex:1;">
+                <div class="field"><label>Название фирмы</label><input type="text" id="contractor-name" placeholder="Название фирмы" required></div>
+                <div class="field"><label>Контактное лицо</label><input type="text" id="contractor-contact" placeholder="ФИО"></div>
+                <div class="field"><label>Телефон</label><input type="text" id="contractor-phone" placeholder="Телефон"></div>
+                <div class="field"><label>Статус</label><div class="type-select-custom"><select id="contractor-status"><option value="активен">активен</option><option value="не активен">не активен</option></select><span class="chevron">▾</span></div></div>
+                <div class="field" style="grid-column:1/-1;"><label>Заметки</label><input type="text" id="contractor-notes" placeholder="Примечания"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveContractorFromModal()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeContractorModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <!-- Модалка добавления/редактирования поставщика -->
+    <div id="supplier-modal-main" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:760px;">
+            <div class="modal-header">
+                <h3 id="supplier-modal-title">Новый поставщик</h3>
+                <button class="close-btn" onclick="closeSupplierMainModal()">&times;</button>
+            </div>
+            <div class="analysis-meta-grid" style="flex:1;">
+                <div class="field"><label>Название</label><input type="text" id="supplier-name" placeholder="Название" required></div>
+                <div class="field"><label>Контактное лицо</label><input type="text" id="supplier-contact" placeholder="ФИО"></div>
+                <div class="field"><label>Счёт</label><input type="text" id="supplier-account" placeholder="Счёт"></div>
+                <div class="field"><label>Банк</label><input type="text" id="supplier-bank" placeholder="Банк"></div>
+                <div class="field"><label>МФО</label><input type="text" id="supplier-mfo" placeholder="МФО"></div>
+                <div class="field"><label>ИНН</label><input type="text" id="supplier-inn" placeholder="ИНН"></div>
+                <div class="field"><label>Директор</label><input type="text" id="supplier-director" placeholder="Директор"></div>
+                <div class="field"><label>Статус</label><div class="type-select-custom"><select id="supplier-status"><option value="активен">активен</option><option value="не активен">не активен</option></select><span class="chevron">▾</span></div></div>
+                <div class="field" style="grid-column:1/-1;"><label>Адрес</label><input type="text" id="supplier-address" placeholder="Адрес"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveSupplierFromMainModal()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeSupplierMainModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+        <script>
+        // Обновление списка при изменениях из другой вкладки/страницы
+        window.addEventListener('storage', (e)=>{
+            if (e.key==='smeta_objects' || e.key==='current_object'){
+                if (typeof renderObjects==='function') renderObjects();
+            }
+            if (e.key==='smeta_suppliers'){
+                if (typeof renderSuppliers==='function') renderSuppliers();
+            }
+        });
+        </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', ()=>{
+        const search = document.getElementById('object-search');
+        if (search){
+            search.addEventListener('input', ()=>{
+                if (typeof renderObjects === 'function') renderObjects();
+            });
+        }
+    });
+    </script>
+</body>
+</html>
+

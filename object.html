@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Смета объекта</title>
+    <meta name="theme-color" content="#6ea8fe">
+    <!-- <link rel="manifest" href="manifest.webmanifest"> -->
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Яндекс.Карты: отключено из-за невалидного API key; включите при наличии ключа
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=YOUR_KEY&lang=ru_RU" type="text/javascript"></script>
+    -->
+</head>
+<body class="with-object-sidebar">
+    <div class="container">
+        <div class="header" style="display:flex; align-items:center; gap:32px;">
+            <div style="display:flex; align-items:center; gap:16px; flex:1;">
+                <!-- Sidebar is permanently visible; header toggle removed -->
+                <!-- Back button removed because sidebar now provides navigation -->
+                <div style="display:flex; flex-direction:column; gap:6px; order:3;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <h1 id="object-title" style="margin:0; font-size:20px; font-weight:700;">Смета объекта</h1>
+                        <!-- Блоки убраны: сразу показываем вкладки (старое поведение) -->
+                        <div style="margin-left:12px;">&nbsp;</div>
+                    </div>
+                
+                    </div>
+            </div>
+        </div>
+
+        <!-- Блоки удалены: вкладки отображаются сразу -->
+
+        <!-- Вкладки -->
+        <div class="tabs">
+            <button class="tab active" data-tab="analysis" onclick="switchTab('analysis', this)">Анализ</button>
+            <button class="tab" data-tab="income" onclick="switchTab('income', this)">Приход</button>
+            <button class="tab" data-tab="plan" onclick="switchTab('plan', this)">Бюджет</button>
+            <button class="tab" data-tab="supply" onclick="switchTab('supply', this)">Снабжение</button>
+            <button class="tab" data-tab="fact" onclick="switchTab('fact', this)">Расход</button>
+            <button class="tab" data-tab="stock" onclick="switchTab('stock', this)">Склад</button>
+        </div>
+
+    <!-- Вкладка Бюджет -->
+    <div id="tab-plan" class="tab-content">
+            <div class="tab-toolbar">
+                <button class="btn btn-secondary electron-only" style="display:none;" onclick="printActiveTabPDF()" title="Сохранить вкладку в PDF">Печать PDF</button>
+                <!-- Google Drive button скрыт по требованию пользователя -->
+            </div>
+            <!-- Верхние статьи бюджета (аккордион) -->
+            <div id="plan-meta-accordion" class="accordion" style="margin-bottom:16px;">
+                <div class="accordion-header" onclick="toggleAccordion('plan-meta-accordion')">
+                    <div style="font-weight:600;">Дополнительные статьи бюджета</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button id="add-plan-meta-btn" class="btn btn-add" onclick="(function(e){ e.stopPropagation(); addPlanMetaExtra(); })(event)">Добавить ещё</button>
+                        <div class="accordion-toggle">▾</div>
+                    </div>
+                </div>
+                <div class="accordion-body" style="display:none; padding:12px 12px 12px;">
+                    <div id="plan-meta-content"></div>
+                </div>
+            </div>
+            <!-- Accordion: фильтры (скрываемые) -->
+            <div id="plan-controls-accordion" class="accordion" style="margin-bottom:12px;">
+                <div class="accordion-header" onclick="togglePlanControlsAccordion()">
+                    <div style="font-weight:600;">Фильтры</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button id="add-group-btn" class="btn btn-add" onclick="(function(e){ e.stopPropagation(); addPlanGroup(); })(event)">Добавить этап</button>
+                        <div class="accordion-toggle">▾</div>
+                    </div>
+                </div>
+                <div class="accordion-body" style="display:none; padding:12px 12px 12px;">
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                        <div>
+                            <label style="font-size:12px; font-weight:600; color:#6b7785; display:block; margin-bottom:4px;">Фильтр по ресурсу</label>
+                            <select id="plan-resource-filter" style="padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:#fff; min-width:160px;" onchange="setPlanResourceFilter(this.value)"></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; color:#6b7785; display:block; margin-bottom:4px;">Поиск по бюджету</label>
+                            <input id="plan-search-input" type="text" placeholder="Название, комментарий, поставщик..." style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:#fff; min-width:260px;" oninput="setPlanSearchQuery(this.value)">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+                            <input type="checkbox" id="plan-hide-photos" onchange="togglePlanPhotos(this.checked)" style="width:18px; height:18px; cursor:pointer;"> 
+                            <label for="plan-hide-photos" style="font-size:13px; cursor:pointer;">Без фото (компактно)</label>
+                        </div>
+                    </div>
+                    <!-- Add button moved to header for always-visible placement -->
+                    <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
+                        <button class="btn btn-secondary" onclick="expandAllGroups()">Раскрыть все этапы</button>
+                        <button class="btn btn-secondary" onclick="collapseAllGroups()">Свернуть все этапы</button>
+                        <button class="btn btn-secondary" onclick="expandAllWorkTypes()">Раскрыть виды работ</button>
+                        <button class="btn btn-secondary" onclick="collapseAllWorkTypes()">Свернуть виды работ</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="plan-controls">
+                <!-- Controls placeholder kept for layout consistency -->
+            </div>
+
+            <div id="plan-groups-container">
+                <!-- Группы будут добавляться динамически -->
+            </div>
+
+            <div class="grand-total">
+                <h2>Всего по всем видам работ: <span id="grand-total-plan">0</span> UZS</h2>
+            </div>
+
+            <!-- Горизонтальные графики для бюджета -->
+            <div id="plan-charts-accordion" class="accordion" style="margin-top:12px;">
+                <div class="accordion-header" onclick="toggleAccordion('plan-charts-accordion')">
+                    <div style="font-weight:600;">Диаграммы</div>
+                    <div class="accordion-toggle">▾</div>
+                </div>
+                <div class="accordion-body" style="display:none; padding:12px 12px 12px;">
+                    <div class="plan-charts">
+                        <div class="chart-section">
+                            <h2>Суммы по ресурсам (Бюджет)</h2>
+                            <div id="plan-resource-chart" class="hbar-chart"></div>
+                        </div>
+                        <div class="chart-section">
+                            <h2>Суммы по группам (Бюджет)</h2>
+                            <div id="plan-group-chart" class="hbar-chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка Факт -->
+        <div id="tab-fact" class="tab-content">
+            <div class="tab-toolbar">
+                <button class="btn btn-secondary electron-only" style="display:none;" onclick="printActiveTabPDF()" title="Сохранить вкладку в PDF">Печать PDF</button>
+                <!-- Google Drive button удалён -->
+            </div>
+            <div class="sub-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                <button class="btn btn-secondary" id="fact-sub-expenses-btn" onclick="switchFactSub('expenses')">Расходы по ресурсам</button>
+                <button class="btn btn-secondary" id="fact-sub-contractors-btn" onclick="switchFactSub('contractors')">Выплаты подрядчикам</button>
+                <button class="btn btn-secondary" id="fact-sub-suppliers-btn" onclick="switchFactSub('suppliers')">Поставщики</button>
+                <button class="btn btn-add" id="add-contractor-payment-btn" style="display:none;" onclick="addContractorPayment()">Добавить выплату</button>
+                <button class="btn btn-add" id="add-supplier-btn" style="display:none;" onclick="openAddSupplierModal()">Добавить поставщика</button>
+            </div>
+            <!-- Верхние статьи расхода (фиксация по доп. действиям) -->
+            <div id="fact-meta-expenses" class="analysis-block" style="margin-bottom:16px;">
+                <div class="block-header"><div class="block-title">Расходы по дополнительным статьям</div></div>
+                <div id="fact-meta-content"></div>
+            </div>
+            <div id="fact-groups-container" data-fact-sub="expenses">
+                <!-- Группы факта будут добавляться динамически -->
+            </div>
+            <div id="contractor-payments-container" style="display:none;" data-fact-sub="contractors"></div>
+            <div id="suppliers-directory-container" style="display:none;" data-fact-sub="suppliers"></div>
+
+            <div class="grand-total">
+                <h2>Сумма расхода всех групп: <span id="grand-total-fact">0</span> UZS</h2>
+            </div>
+        </div>
+
+        <!-- Вкладка Снабжение -->
+        <div id="tab-supply" class="tab-content">
+            <div class="tab-toolbar">
+                <button class="btn btn-secondary electron-only" style="display:none;" onclick="printActiveTabPDF()" title="Сохранить вкладку в PDF">Печать PDF</button>
+            </div>
+            <div class="sub-tabs supply-sub-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center;">
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary" id="supply-sub-budget-btn" onclick="switchSupplySub('budget')">Из бюджета</button>
+                    <button class="btn btn-secondary" id="supply-sub-competitive-btn" onclick="switchSupplySub('competitive')">Конкурентный лист</button>
+                    <button class="btn btn-secondary" id="supply-sub-orders-btn" onclick="switchSupplySub('orders')">Документы</button>
+                </div>
+                <div id="supply-status-filters" style="display:none; gap:6px; flex-wrap:wrap; margin-left:12px;"></div>
+                <div style="display:flex; gap:8px; margin-left:auto; align-items:center;" id="supply-budget-right-tools">
+                    <input type="text" id="supply-budget-search" class="styled-input" placeholder="Поиск по названию / виду работ" style="display:none;" oninput="setSupplyFilter('query', this.value)">
+                    <button class="btn btn-success" id="supply-create-order-btn" style="display:none;" onclick="createSupplyOrderFromSelection()">Сформировать заказ</button>
+                    <button class="btn btn-secondary" id="supply-create-competitive-btn" style="display:none;" onclick="createCompetitiveDocFromSelection()">Сформировать конкурентный лист</button>
+                </div>
+            </div>
+            <div id="supply-budget-container" data-supply-sub="budget"></div>
+            <div id="supply-competitive-container" data-supply-sub="competitive" style="display:none;"></div>
+            <div id="supply-orders-container" data-supply-sub="orders" style="display:none;"></div>
+        </div>
+
+        <!-- Вкладка Склад -->
+        <div id="tab-stock" class="tab-content">
+            <div class="tab-toolbar">
+                <button class="btn btn-secondary electron-only" style="display:none;" onclick="printActiveTabPDF()" title="Сохранить вкладку в PDF">Печать PDF</button>
+            </div>
+            <div class="sub-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                <button class="btn btn-secondary" id="stock-sub-incoming-btn" onclick="switchStockSub('incoming')">Приход</button>
+                <button class="btn btn-secondary" id="stock-sub-outgoing-btn" onclick="switchStockSub('outgoing')">Расход</button>
+                <button class="btn btn-secondary" id="stock-sub-writeoff-btn" onclick="switchStockSub('writeoff')">Списание</button>
+            </div>
+            <div id="stock-incoming-container" data-stock-sub="incoming"></div>
+            <div id="stock-outgoing-container" data-stock-sub="outgoing" style="display:none;"></div>
+            <div id="stock-writeoff-container" data-stock-sub="writeoff" style="display:none;"></div>
+        </div>
+
+        <!-- Вкладка Приход (перемещена сразу после Анализ) -->
+        <div id="tab-income" class="tab-content">
+            <div class="tab-toolbar">
+                <button class="btn btn-secondary electron-only" style="display:none;" onclick="printActiveTabPDF()" title="Сохранить вкладку в PDF">Печать PDF</button>
+                <!-- Google Drive button удалён -->
+            </div>
+            <div class="plan-controls">
+                <button id="add-income-btn" class="btn btn-add">Добавить приход</button>
+            </div>
+            <div id="income-type-filters" style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 10px;"></div>
+            <div id="income-container">
+                <!-- Таблица прихода будет рендериться здесь -->
+            </div>
+            <!-- Removed duplicate income total; table contains its own total row -->
+        </div>
+
+        <!-- Вкладка Анализ -->
+    <div id="tab-analysis" class="tab-content active">
+            <div class="tab-toolbar">
+                <button class="btn btn-secondary electron-only" style="display:none;" onclick="printActiveTabPDF()" title="Сохранить вкладку в PDF">Печать PDF</button>
+            </div>
+            <div class="analysis-content">
+                <!-- Данные объекта (read-only) -->
+                <div class="analysis-block" id="object-data-block">
+                    <div class="block-header">
+                        <div class="block-title">Данные объекта</div>
+                        <div class="block-actions"><button class="btn btn-primary" id="object-data-edit-btn">Изменить</button></div>
+                    </div>
+                    <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+                        <div class="analysis-photo large" id="object-photo-view"></div>
+                        <div class="object-data-grid" style="flex:1;" id="object-data-grid"></div>
+                    </div>
+                </div>
+
+                <div id="analysis-data">
+                    <!-- Аналитические данные будут отображаться здесь -->
+                </div>
+                
+
+                <!-- Блок: Сравнение бюджета, расхода и остатка -->
+                <div class="analysis-block" id="analysis-chart">
+                    <div class="block-header"><div class="block-title">Сравнение бюджета, расхода и остатка</div></div>
+                    <div class="chart-section">
+                    <div class="chart-container">
+                        <div class="chart-labels">
+                            <div class="chart-label">
+                                <span class="label-color plan-color"></span>
+                                <span>Бюджет</span>
+                            </div>
+                            <div class="chart-label">
+                                <span class="label-color income-color"></span>
+                                <span>Приход</span>
+                            </div>
+                            <div class="chart-label">
+                                <span class="label-color fact-color"></span>
+                                <span>Расход / Перерасход</span>
+                            </div>
+                            <div class="chart-label">
+                                <span class="label-color balance-color"></span>
+                                <span>Остаток / Недостача</span>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <div class="chart-scale">
+                                <div class="scale-line"></div>
+                                <div class="scale-markers" id="scale-markers"></div>
+                            </div>
+                            <div class="chart-bars">
+                                <div class="chart-bar-container">
+                                    <div class="chart-bar plan-bar" id="plan-bar">
+                                        <span class="bar-label" id="plan-label">0 UZS</span>
+                                    </div>
+                                </div>
+                                <div class="chart-bar-container">
+                                    <div class="chart-bar income-bar" id="income-bar">
+                                        <span class="bar-label" id="income-label">0 UZS</span>
+                                    </div>
+                                </div>
+                                <div class="chart-bar-container" id="fact-bar-container">
+                                    <div class="chart-bar fact-bar" id="fact-bar">
+                                        <span class="bar-label" id="fact-label">0 UZS</span>
+                                    </div>
+                                    <div class="excess-overlay" id="excess-overlay" style="display:none;"></div>
+                                </div>
+                                <div class="chart-bar-container">
+                                    <div class="chart-bar balance-bar" id="balance-bar">
+                                        <span class="bar-label" id="balance-label">0 UZS</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для карты -->
+    <div id="map-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Выбор локации</h3>
+                <button class="close-btn" onclick="closeMapModal()">&times;</button>
+            </div>
+            <div id="yandex-map" style="width: 100%; height: 400px;"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveLocation()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeMapModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для просмотра чека -->
+    <div id="receipt-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Просмотр чека</h3>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="icon-btn" title="Удалить чек" onclick="deleteReceiptFromModal()">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                    <button class="close-btn" onclick="closeReceiptModal()">&times;</button>
+                </div>
+            </div>
+            <div class="receipt-viewer" style="text-align:center;">
+                <img id="receipt-modal-img" src="" alt="Чек" style="max-width:100%; max-height:70vh;" />
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeReceiptModal()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка детализации финансов -->
+    <div id="finance-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:960px;">
+            <div class="modal-header" style="align-items:flex-start;">
+                <div>
+                    <h3 id="finance-modal-title" style="margin:0 0 8px;">Детализация</h3>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                        <label style="font-size:12px; color:#6b7785;">Период:</label>
+                        <input type="month" id="fin-from" style="padding:4px 8px;">
+                        <input type="month" id="fin-to" style="padding:4px 8px;">
+                        <button class="btn btn-primary" id="fin-apply-btn" style="padding:6px 12px;">Поиск</button>
+                        <span id="fin-range-note" style="font-size:12px; color:#6b7785;"></span>
+                    </div>
+                </div>
+                <button class="close-btn" id="finance-close-btn" title="Закрыть">&times;</button>
+            </div>
+            <div class="finance-tabs" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                <button class="btn btn-secondary fin-tab active" data-tab="income">Приходы</button>
+                <button class="btn btn-secondary fin-tab" data-tab="expense">Расходы</button>
+                <button class="btn btn-secondary fin-tab" data-tab="overrun">Перерасход</button>
+                <button class="btn btn-secondary fin-tab" data-tab="saving">Экономия</button>
+            </div>
+            <div id="finance-tab-panels">
+                <div class="fin-panel" data-panel="income" style="display:block;"><div class="fin-list" id="fin-income-list"></div></div>
+                <div class="fin-panel" data-panel="expense" style="display:none;"><div class="fin-list" id="fin-expense-list"></div></div>
+                <div class="fin-panel" data-panel="overrun" style="display:none;"><div class="fin-list" id="fin-overrun-list"></div></div>
+                <div class="fin-panel" data-panel="saving" style="display:none;"><div class="fin-list" id="fin-saving-list"></div></div>
+            </div>
+        </div>
+    </div>
+    <!-- Модалка фото прихода -->
+    <div id="income-photo-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:640px;">
+            <div class="modal-header">
+                <h3 id="income-photo-title" style="margin:0;">Фото прихода</h3>
+                <button class="close-btn" onclick="closeIncomePhotoModal()">&times;</button>
+            </div>
+            <div id="income-photo-body" style="min-height:280px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;"></div>
+            <div class="modal-footer" style="display:flex; justify-content:space-between;">
+                <div>
+                    <button class="btn btn-danger" id="income-photo-delete-btn" style="display:none;">Удалить фото</button>
+                </div>
+                <div>
+                    <button class="btn btn-secondary" onclick="closeIncomePhotoModal()">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Боковой список объектов (прикреплён слева) -->
+    <div id="object-sidebar" class="sidepanel">
+        <div class="sidepanel-header">
+            <strong>Список объектов</strong>
+        </div>
+        <div class="sidepanel-body" id="object-sidebar-list"></div>
+    </div>
+
+    <script>
+    if ('serviceWorker' in navigator && !navigator.serviceWorker.controller) {
+        navigator.serviceWorker.register('sw.js').catch(()=>{});
+    }
+    </script>
+    <script src="drive.js"></script>
+    <script src="object.js"></script>
+    <script>
+    // Fallback guard: если по какой-то причине switchSupplySub не определён (ошибка при загрузке object.js)
+    if (typeof window.switchSupplySub !== 'function') {
+        console.warn('Fallback init: switchSupplySub отсутствует, создаём упрощённую версию');
+        window.switchSupplySub = function(which){
+            window.__supplySub = which;
+            const panels = document.querySelectorAll('[data-supply-sub]');
+            panels.forEach(p=>{ p.style.display = (p.getAttribute('data-supply-sub')===which ? 'block':'none'); });
+            // Кнопки
+            const btns = ['budget','competitive','orders'];
+            btns.forEach(k=>{
+                const b = document.getElementById('supply-sub-'+k+'-btn');
+                if (b) b.classList.toggle('btn-primary', k===which);
+            });
+        };
+    }
+    // Авто-активация первой под-вкладки если не выбрана
+    document.addEventListener('DOMContentLoaded', ()=>{
+        if (!window.__supplySub){ try { window.switchSupplySub('budget'); } catch(_){} }
+    });
+    // Analysis meta initialization after object.js loads currentObject
+    document.addEventListener('DOMContentLoaded', ()=>{
+        let photoDraft = null;
+        const byId = id=>document.getElementById(id);
+
+        function renderObjectDataView(){
+            const o = window.currentObject || {};
+            const photoWrap = byId('object-photo-view');
+            photoWrap.innerHTML = o.photo ? `<img src="${o.photo}" alt="Фото объекта">` : '<span class="photo-placeholder">Нет фото</span>';
+            const grid = byId('object-data-grid');
+            const users = (()=>{ try { return JSON.parse(localStorage.getItem('smeta_users'))||[]; } catch(_) { return []; } })();
+            const resolveUserName = (id)=>{
+                if (!id) return '—';
+                const u = users.find(x=>x.id===id);
+                return u ? (u.fullName || u.name || u.username || '—') : '—';
+            };
+            const resolveUserPhone = (id)=>{
+                if (!id) return '';
+                const u = users.find(x=>x.id===id);
+                return u ? (u.phone||'') : '';
+            };
+            grid.innerHTML = `
+                <div class="object-data-item"><span class="label">Название</span>${o.name||'—'}</div>
+                <div class="object-data-item"><span class="label">Заказчик</span>${resolveUserName(o.clientUserId)}</div>
+                <div class="object-data-item"><span class="label">Телефон заказчика</span>${resolveUserPhone(o.clientUserId)||'—'}</div>
+                <div class="object-data-item"><span class="label">Ответственный прораб</span>${resolveUserName(o.foremanUserId)}</div>
+                <div class="object-data-item"><span class="label">Начало</span>${o.startDate||'—'}</div>
+                <div class="object-data-item"><span class="label">Окончание</span>${o.endDate||'—'}</div>
+                <div class="object-data-item"><span class="label">Площадь (м²)</span>${o.area||'—'}</div>
+                <div class="object-data-item"><span class="label">Блок</span>${o.block||'—'}</div>
+                <div class="object-data-item"><span class="label">Тип</span>${o.type||'—'}</div>
+                <div class="object-data-item"><span class="label">Тип объекта</span>${o.projectType||'—'}</div>
+                <div class="object-data-item"><span class="label">Статус</span>${o.status||'—'}</div>
+                <div class="object-data-item" style="grid-column:1 / -1;"><span class="label">Адрес</span>${o.address||'—'}</div>
+            `;
+        }
+
+        function openObjectDataModal(){
+            const o = window.currentObject || {};
+            byId('modal-name').value = o.name||'';
+            byId('modal-startDate').value = o.startDate||'';
+            byId('modal-endDate').value = o.endDate||'';
+            byId('modal-area').value = o.area||'';
+            byId('modal-block').value = o.block||'';
+            byId('modal-address').value = o.address||'';
+            byId('modal-type').value = o.type||'жилой';
+            byId('modal-status').value = o.status||'в работе';
+            byId('modal-projectType').value = o.projectType||'';
+            populateUserSelects();
+            const fSel = byId('modal-foremanUserId'); if (fSel) fSel.value = o.foremanUserId || '';
+            const cSel = byId('modal-clientUserId'); if (cSel) cSel.value = o.clientUserId || '';
+            const prev = byId('object-photo-preview');
+            prev.innerHTML = o.photo ? `<img src="${o.photo}" alt="Фото объекта">` : '<span class="photo-placeholder">Нет фото</span>';
+            photoDraft = o.photo || null;
+            byId('object-data-modal').style.display = 'block';
+        }
+        function closeObjectDataModal(){ byId('object-data-modal').style.display = 'none'; }
+        function saveObjectDataModal(){
+            try{
+                if (!window.currentObject) throw new Error('Объект не найден');
+                const data = {
+                    name: byId('modal-name').value || 'Новый объект',
+                    startDate: byId('modal-startDate').value || '',
+                    endDate: byId('modal-endDate').value || '',
+                    area: byId('modal-area').value || '',
+                    block: byId('modal-block').value || '',
+                    address: byId('modal-address').value || '',
+                    type: byId('modal-type').value || 'жилой',
+                    status: byId('modal-status').value || 'в работе',
+                    projectType: byId('modal-projectType').value || '',
+                    photo: photoDraft
+                };
+                const foremanUserId = byId('modal-foremanUserId') ? byId('modal-foremanUserId').value : '';
+                const clientUserId = byId('modal-clientUserId') ? byId('modal-clientUserId').value : '';
+                data.foremanUserId = foremanUserId;
+                data.clientUserId = clientUserId;
+                Object.assign(window.currentObject, data);
+                if (typeof saveObject==='function') saveObject();
+                const titleEl = byId('object-title'); if (titleEl) titleEl.textContent = window.currentObject.name;
+                renderObjectDataView();
+                if (typeof loadAnalysisData==='function') loadAnalysisData();
+                closeObjectDataModal();
+            }catch(err){ alert('не удалось сохранить: ' + err.message); }
+        }
+
+        // bind edit button
+        const editBtn = byId('object-data-edit-btn');
+        if (editBtn) editBtn.addEventListener('click', openObjectDataModal);
+        // bind modal buttons
+        const saveBtn = byId('object-data-save-btn'); if (saveBtn) saveBtn.addEventListener('click', saveObjectDataModal);
+        const cancelBtn = byId('object-data-cancel-btn'); if (cancelBtn) cancelBtn.addEventListener('click', closeObjectDataModal);
+        const closeBtnX = byId('object-data-close-x'); if (closeBtnX) closeBtnX.addEventListener('click', closeObjectDataModal);
+        // photo input in modal
+        const photoInput = byId('object-photo-input-modal');
+        if (photoInput){
+            photoInput.addEventListener('change', ()=>{
+                const file = photoInput.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = e=>{ photoDraft = e.target.result; byId('object-photo-preview').innerHTML = '<img src="'+photoDraft+'" alt="Фото объекта">'; };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // init view
+        setTimeout(()=>{ renderObjectDataView(); }, 100);
+        // sync from storage (optional)
+        window.addEventListener('storage', (e)=>{
+            if (e.key==='smeta_objects' || e.key==='current_object'){
+                setTimeout(()=>{ try { const fresh = JSON.parse(localStorage.getItem('current_object')); if (fresh){ window.currentObject = fresh; renderObjectDataView(); if (typeof loadAnalysisData==='function') loadAnalysisData(); } } catch(_){} }, 50);
+            }
+            if (e.key==='smeta_users'){
+                // если изменился список пользователей — обновим отображение и селекты
+                renderObjectDataView();
+                if (byId('object-data-modal') && byId('object-data-modal').style.display==='block'){
+                    populateUserSelects();
+                }
+            }
+        });
+        // Populate user selects (foreman & client) from global users list
+        function populateUserSelects(){
+            const users = (()=>{ try { return JSON.parse(localStorage.getItem('smeta_users'))||[]; } catch(_) { return []; } })().filter(u=> (u.status||'активен')==='активен');
+            const foremanSel = byId('modal-foremanUserId');
+            const clientSel = byId('modal-clientUserId');
+            if (foremanSel){
+                const foremen = users.filter(u=> (u.role||'').toLowerCase()==='прораб');
+                foremanSel.innerHTML = '<option value="">—</option>' + foremen.map(u=>`<option value="${u.id}">${u.fullName||u.name||u.username||u.phone||u.id}</option>`).join('');
+            }
+            if (clientSel){
+                const clients = users.filter(u=> (u.role||'').toLowerCase()==='заказчик');
+                clientSel.innerHTML = '<option value="">—</option>' + clients.map(u=>`<option value="${u.id}">${u.fullName||u.name||u.username||u.phone||u.id}</option>`).join('');
+            }
+        }
+        // Finance modal bindings
+        document.querySelectorAll('.fin-tab').forEach(btn=>{
+            btn.addEventListener('click', ()=>{ setFinanceActiveTab(btn.getAttribute('data-tab')); });
+        });
+        const finApply = document.getElementById('fin-apply-btn'); if (finApply) finApply.addEventListener('click', renderFinanceLists);
+        const finClose = document.getElementById('finance-close-btn'); if (finClose) finClose.addEventListener('click', closeFinanceModal);
+    });
+    </script>
+
+    <!-- Модальное окно редактирования данных объекта -->
+    <div id="object-data-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактировать данные объекта</h3>
+                <button class="close-btn" id="object-data-close-x">&times;</button>
+            </div>
+            <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+                <div class="analysis-photo large" id="object-photo-preview"></div>
+                <div class="analysis-meta-grid" style="flex:1;">
+                    <div class="field"><label>Название объекта</label><input type="text" id="modal-name" placeholder="Название"></div>
+                    
+                    <div class="field"><label>Начало</label><input type="date" id="modal-startDate"></div>
+                    <div class="field"><label>Окончание</label><input type="date" id="modal-endDate"></div>
+                    <div class="field"><label>Площадь (м²)</label><input type="number" step="0.01" id="modal-area" placeholder="0"></div>
+                    <div class="field"><label>Блок</label><input type="text" id="modal-block" placeholder="Блок"></div>
+                    <div class="field"><label>Тип</label><div class="type-select-custom"><select id="modal-type"><option value="жилой">Жилой</option><option value="не жилой">Не жилой</option></select><span class="chevron">▾</span></div></div>
+                    <div class="field"><label>Тип объекта</label><div class="type-select-custom"><select id="modal-projectType"><option value="">—</option><option value="Инвестиционный">Инвестиционный</option><option value="Гос. объект">Гос. объект</option></select><span class="chevron">▾</span></div></div>
+                    <div class="field"><label>Статус</label><div class="type-select-custom"><select id="modal-status"><option value="в работе">В работе</option><option value="пауза">Пауза</option><option value="завершен">Завершен</option><option value="отменен">Отменен</option></select><span class="chevron">▾</span></div></div>
+                    <div class="field"><label>Заказчик (из пользователей)</label><div class="type-select-custom"><select id="modal-clientUserId"><option value="">—</option></select><span class="chevron">▾</span></div></div>
+                    <div class="field"><label>Ответственный прораб</label><div class="type-select-custom"><select id="modal-foremanUserId"><option value="">—</option></select><span class="chevron">▾</span></div></div>
+                    <div class="field" style="grid-column:1 / -1;"><label>Адрес объекта</label><input type="text" id="modal-address" placeholder="Адрес"></div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><input type="file" accept="image/*" id="object-photo-input-modal"></div>
+                <div>
+                    <button class="btn btn-primary" id="object-data-save-btn">Сохранить</button>
+                    <button class="btn btn-secondary" id="object-data-cancel-btn">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

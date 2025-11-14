@@ -1,0 +1,49 @@
+{
+  "name": "smeta-local-app",
+  "version": "0.1.5",
+  "description": "Local SMETA app (Electron wrapper)",
+  "main": "main.js",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder -w",
+    "prepare:icon": "node scripts/prepare-icon.js",
+    "dist": "npm run prepare:icon && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.local.smeta",
+    "productName": "SMETA",
+    "asar": true,
+    "directories": {
+  "output": "out-0.1.5"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!exports/**",
+      "!**/*.map",
+      "!out-*/**"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "SMETA",
+      "deleteAppDataOnUninstall": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.13.3",
+    "png-to-ico": "^2.1.8"
+  }
+}
