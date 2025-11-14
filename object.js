@@ -124,6 +124,17 @@ function fullObjectInit(){
     try{ initAccordionHeights(); }catch(_){ }
     // Ensure the left sidebar is populated with available objects
     try{ renderObjectSidebarList(); }catch(_){ }
+    // Hide print button when running in a browser without the native printing API
+    try{
+        const pb = document.getElementById('print-plan-btn');
+        if (pb){
+            if (!(window.smetaAPI && typeof window.smetaAPI.printToPDF === 'function')){
+                pb.style.display = 'none';
+            } else {
+                pb.style.display = 'inline-flex';
+            }
+        }
+    }catch(_){ }
 }
 
 // Initialize accordion bodies state on page load: ensure displayed bodies have no fixed height
@@ -284,8 +295,15 @@ async function printActiveTabPDF(){
 // Small wrapper for Plan-tab print button (keeps API call centralized)
 function printPlanPDF(){
     try{
-        // call existing generic print handler which picks active tab
-        printActiveTabPDF();
+        // If running inside the desktop app with print support, use the native exporter
+        if (window.smetaAPI && typeof window.smetaAPI.printToPDF === 'function'){
+            return printActiveTabPDF();
+        }
+        // Otherwise fall back to the browser print dialog (ask user to confirm)
+        const msg = 'Экспорт в PDF через приложение недоступен в этом окружении. Открыть диалог печати браузера?';
+        if (confirm(msg)){
+            window.print();
+        }
     }catch(e){
         console.warn('printPlanPDF error', e);
         alert('Ошибка при печати: ' + (e && e.message ? e.message : 'Неизвестная ошибка'));
