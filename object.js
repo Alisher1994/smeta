@@ -321,6 +321,21 @@ function switchTab(tabName, button) {
         renderPlanGroups();
         // Ensure the checkbox reflects the choice immediately
         try{ const chk = document.getElementById('plan-hide-photos'); if (chk) chk.checked = true; }catch(_){ }
+        // Ensure the Plan Groups accordion is collapsed (hidden) when entering Budget tab
+        try{
+            const pg = document.getElementById('plan-groups-accordion');
+            if (pg){
+                const body = pg.querySelector('.accordion-body');
+                const toggle = pg.querySelector('.accordion-toggle');
+                if (body){
+                    // collapse immediately (no animation) to avoid visual jump on tab switch
+                    body.style.display = 'none';
+                    body.style.height = '0px';
+                    body.dataset.open = 'false';
+                    if (toggle) toggle.textContent = '▾';
+                }
+            }
+        }catch(_){ }
     } else if (tabName === 'supply') {
         ensureSupplyData();
         renderSupplyView();
