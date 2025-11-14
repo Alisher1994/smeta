@@ -137,14 +137,28 @@ function fullObjectInit(){
             }
         }
     }catch(_){ }
-    // Hide supply/stock tabs by default unless enabled in object settings
+    // Update supply/stock tab visibility based on object settings
+    try{ updateSupplyStockTabs(); }catch(_){ }
+}
+
+// Update visibility of Supply and Stock tabs according to `currentObject.data.settings`
+function updateSupplyStockTabs(settings){
     try{
-        const settings = (currentObject && currentObject.data && currentObject.data.settings) || {};
+        const s = settings || (currentObject && currentObject.data && currentObject.data.settings) || {};
         const supplyBtn = document.getElementById('tab-btn-supply');
         const stockBtn = document.getElementById('tab-btn-stock');
-        if (supplyBtn) supplyBtn.style.display = settings.enableSupply ? 'inline-flex' : 'none';
-        if (stockBtn) stockBtn.style.display = settings.enableStock ? 'inline-flex' : 'none';
-        try{ const activeTab = document.querySelector('.tab.active'); if (activeTab && ((activeTab.dataset.tab==='supply' && !settings.enableSupply) || (activeTab.dataset.tab==='stock' && !settings.enableStock))){ const analysisBtn = document.querySelector('.tab[data-tab="analysis"]'); if (analysisBtn) switchTab('analysis', analysisBtn); } }catch(_){ }
+        if (supplyBtn) supplyBtn.style.display = s.enableSupply ? 'inline-flex' : 'none';
+        if (stockBtn) stockBtn.style.display = s.enableStock ? 'inline-flex' : 'none';
+        // If active tab is hidden, switch back to analysis
+        try{
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab){
+                if ((activeTab.dataset.tab==='supply' && !s.enableSupply) || (activeTab.dataset.tab==='stock' && !s.enableStock)){
+                    const analysisBtn = document.querySelector('.tab[data-tab="analysis"]');
+                    if (analysisBtn) switchTab('analysis', analysisBtn);
+                }
+            }
+        }catch(_){ }
     }catch(_){ }
 }
 
