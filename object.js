@@ -122,6 +122,8 @@ function fullObjectInit(){
     updateChart();
     // initialize accordion heights so visible bodies display correctly and support smooth toggle
     try{ initAccordionHeights(); }catch(_){ }
+    // global print shortcut (Ctrl/Cmd+P)
+    try{ initGlobalPrintShortcut(); }catch(_){ }
     // Ensure the left sidebar is populated with available objects
     try{ renderObjectSidebarList(); }catch(_){ }
     // Hide print button when running in a browser without the native printing API
@@ -156,6 +158,27 @@ function initAccordionHeights(){
             const toggle = acc.querySelector('.accordion-toggle'); if (toggle) toggle.textContent = '▾';
         }
     });
+}
+
+// Capture Ctrl/Cmd+P globally and route to our print handler (works in browser and Electron)
+function initGlobalPrintShortcut(){
+    // Debounce repeated events
+    let last = 0;
+    document.addEventListener('keydown', (ev)=>{
+        try{
+            const now = Date.now();
+            if (now - last < 300) return; // ignore duplicates
+            // Accept both Ctrl+P (Windows/Linux) and Meta+P (macOS)
+            const isPrint = (ev.ctrlKey || ev.metaKey) && (ev.key && ev.key.toLowerCase() === 'p');
+            if (isPrint){
+                ev.preventDefault();
+                ev.stopPropagation();
+                last = now;
+                // Route to our unified print handler
+                printPlanPDF();
+            }
+        }catch(e){ console.warn('print shortcut handler error', e); }
+    }, { capture: true });
 }
 
 function sumBlockPlan(block){
