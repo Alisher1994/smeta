@@ -325,7 +325,19 @@ function printPlanPDF(){
         // Otherwise fall back to the browser print dialog (ask user to confirm)
         const msg = 'Экспорт в PDF через приложение недоступен в этом окружении. Открыть диалог печати браузера?';
         if (confirm(msg)){
+            // Add temporary `.print` class to the active tab so print-specific styles apply
+            const active = document.querySelector('.tab-content.active');
+            if (active) active.classList.add('print');
+            // Use afterprint to clean up the print class when the user finishes printing
+            const cleanup = ()=>{
+                try{ if (active) active.classList.remove('print'); }catch(_){ }
+                try{ window.removeEventListener('afterprint', cleanup); }catch(_){ }
+            };
+            try{ window.addEventListener('afterprint', cleanup); }catch(_){ }
+            // Fallback to browser print dialog
             window.print();
+            // As a safety fallback, remove the class after a short delay if afterprint doesn't fire
+            setTimeout(cleanup, 1500);
         }
     }catch(e){
         console.warn('printPlanPDF error', e);
