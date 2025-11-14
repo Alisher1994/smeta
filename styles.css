@@ -876,9 +876,13 @@ body { font-family: -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-se
 /* Print only the active tab when printing fallback is used */
 @media print {
     body { background: #fff; }
+    /* Hide UI chrome and sidepanel; show only the active tab content full-width */
     .header, .tabs, .modal, .btn, .tab-toolbar { display: none !important; }
+    .sidepanel, .sidepanel-body { display: none !important; }
     .tab-content { display: none !important; }
     .tab-content.print { display: block !important; }
+    /* Remove left margin reserved for sidebar so printed content uses full page width */
+    .with-object-sidebar .container { margin-left: 0 !important; max-width: 100% !important; }
     .smeta-table thead th { top: 0 !important; }
 }
 
